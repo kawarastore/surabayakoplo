@@ -6,14 +6,12 @@ const axios = require("axios");
 // KONFIGURASI
 // ============================================================
 const CONFIG = {
-  TOKEN: process.env.MTQ5MzYyNTI5MDMyNzMzMDkwNw.G-_QWX.K-GaeR0YiVlaMK3sZqlfDWIzeU5jgWKrJa2cB0,
+  TOKEN: process.env.DISCORD_TOKEN,
   BOT_SECRET: process.env.BOT_SECRET || "SURABAYAJAYA112233",
-  UNIVERSE_ID: process.env.9941540378,
-  ROBLOX_COOKIE: process.env._|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_CAEaAhADIhwKBGR1aWQSFDE0NDc2OTI4MTk1NzQ2ODg4NjY4KAQ.CnhGO03lWa206-7XgZMAzDj6bwXN2rVRB_5KmH6GDqCua_AY1z3wHgRsPUNusfqBSHyzLP-wQBfmU4EqSLdRWYIEuFgGxsv_dpiizbbo3q0-FcLTEViPv-LACxwlvpizU8xgr7Lhe3-Sx-NS-WlxoJ96aq-Jbi5RFnX50PWrc0vPNEIF-d8dcNslRJhicde4tDCk5uEjB6sy5ljTOHD_NhTswrT7MxogXfB0T0OEgnxmBm0O-6VPYVYd2BtQMAwD0xDxj0TyiQgWJ5mvs0caW1lYoFLTypa1YyAsKXL4cEd9iglb46xDKVGBFBrAWPI9XtryFEOJVA7b7PAdWb4fmxihGBwUkdd0rrXPnFCIh3W9P6QImlGocw3JDVqAvTVbNW-itb5TtluIdXsWKd4in9s2EFuSYEl3cYZVGs8pvnuS-B6V2b-Tg3rrShl1yFa39nW01EApGwAnVwopsoJe2z_eJ40LWZrV12jq2jr9CvvhZyvvg8_iRj0aQ-t2-vwDHqzHmYmmLGj8Rm7zNKF7AEZar5hvtkIKjurtWlsmdjnJjU9p1Jd3w57LfJuXMTZfc9MCtZHXm6-paUNrF2eQScbhJigaUgMMfiR5n46RwMI3uK2w_Nzuzv0k0bI1wojoczVLqNQrRKWSwvs8VSCvcVGCE0I5J_9DyAr7S95bfE3UCyIHA4MA4WxIZ6rXg5quPvpjXN6WzpSHaEzpMEgEI2hBkA1hgY17PQ5i-1MgnPb8f3mgp9VyBGcjIPBxUqPCqPDmLU74WYVzG-ginQaBLwDaaGDFyoaRRWEm8nqz3VKsGKF6l4E46U02MHbAYuJeGOguxnK7g4V8AmK-i0e9dLEcIFIQW_ATQulfy7eZjMI2ICMWOU5dy_KByVpxNxavSjSS23cSmbnLkFSaaT4sYFyBWBfbgAcNMwQOpwN1fbMjf13oO8FBXoV29fE6-kU_KtlVMw,
-  ADMIN_ROLE_ID: process.env.1445784552504295505,
-  
-  // Channel IDs - isi sesuai server Discord kamu
-  LOG_CHANNEL_ID: process.env.1493626688934903938 || "",
+  UNIVERSE_ID: process.env.UNIVERSE_ID,
+  ROBLOX_COOKIE: process.env.ROBLOX_COOKIE,
+  ADMIN_ROLE_ID: process.env.ADMIN_ROLE_ID,
+  LOG_CHANNEL_ID: process.env.LOG_CHANNEL_ID || "",
 };
 
 const client = new Client({
