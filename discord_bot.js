@@ -11,7 +11,10 @@ const CONFIG = {
   UNIVERSE_ID: process.env.UNIVERSE_ID,
   ROBLOX_COOKIE: process.env.ROBLOX_COOKIE,
   ADMIN_ROLE_ID: process.env.ADMIN_ROLE_ID,
-  LOG_CHANNEL_ID: process.env.LOG_CHANNEL_ID || "",
+
+  JOIN_LEAVE_CHANNEL_ID:   "1493823914860609676",
+  PLAYER_COUNT_CHANNEL_ID: "1493626688934903938",
+  COMMAND_LOG_CHANNEL_ID:  "1493824074017935371",
 };
 
 const client = new Client({
@@ -22,10 +25,21 @@ const client = new Client({
 });
 
 // ============================================================
+// HELPER KIRIM EMBED KE CHANNEL
+// ============================================================
+async function sendEmbed(channelId, embedData) {
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel) return console.warn("[Bot] Channel tidak ditemukan:", channelId);
+    await channel.send({ embeds: [new EmbedBuilder(embedData)] });
+  } catch (err) {
+    console.error("[Bot] sendEmbed error:", err.message);
+  }
+}
+
+// ============================================================
 // ROBLOX API HELPER
 // ============================================================
-
-// Dapatkan User ID dari username Roblox
 async function getRobloxUserId(username) {
   try {
     const response = await axios.post(
@@ -44,7 +58,6 @@ async function getRobloxUserId(username) {
   }
 }
 
-// Dapatkan info server yang aktif
 async function getActiveServers() {
   try {
     const response = await axios.get(
@@ -62,10 +75,8 @@ async function getActiveServers() {
   }
 }
 
-// Kirim message ke semua server via MessagingService (Open Cloud)
 async function publishToAllServers(topic, data) {
   try {
-    // Roblox Open Cloud Messaging API
     const response = await axios.post(
       `https://apis.roblox.com/messaging-service/v1/universes/${CONFIG.UNIVERSE_ID}/topics/${topic}`,
       {
@@ -73,7 +84,7 @@ async function publishToAllServers(topic, data) {
       },
       {
         headers: {
-          "x-api-key": process.env.ROBLOX_API_KEY, // Open Cloud API Key
+          "x-api-key": process.env.ROBLOX_API_KEY,
           "Content-Type": "application/json",
         },
       }
@@ -86,31 +97,27 @@ async function publishToAllServers(topic, data) {
 }
 
 // ============================================================
-// CEK APAKAH USER ADALAH ADMIN
+// CEK ADMIN
 // ============================================================
 function isAdmin(interaction) {
   if (CONFIG.ADMIN_ROLE_ID) {
     return interaction.member.roles.cache.has(CONFIG.ADMIN_ROLE_ID);
   }
-  // Fallback: cek permission Administrator
   return interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 }
 
 // ============================================================
-// SLASH COMMANDS DEFINITION
+// SLASH COMMANDS
 // ============================================================
 const commands = [
-  // /serverinfo - Lihat info server Roblox
   new SlashCommandBuilder()
     .setName("serverinfo")
     .setDescription("Lihat info server Roblox yang aktif"),
 
-  // /players - Lihat list player di semua server
   new SlashCommandBuilder()
     .setName("players")
     .setDescription("Lihat daftar player di semua server aktif"),
 
-  // /kick - Kick player
   new SlashCommandBuilder()
     .setName("kick")
     .setDescription("Kick player dari server Roblox")
@@ -121,7 +128,6 @@ const commands = [
       opt.setName("reason").setDescription("Alasan kick").setRequired(false)
     ),
 
-  // /ban - Ban player
   new SlashCommandBuilder()
     .setName("ban")
     .setDescription("Ban player dari game Roblox")
@@ -132,7 +138,6 @@ const commands = [
       opt.setName("reason").setDescription("Alasan ban").setRequired(false)
     ),
 
-  // /unban - Unban player
   new SlashCommandBuilder()
     .setName("unban")
     .setDescription("Unban player dari game Roblox")
@@ -140,7 +145,6 @@ const commands = [
       opt.setName("userid").setDescription("User ID Roblox player").setRequired(true)
     ),
 
-  // /announce - Kirim announcement ke semua server
   new SlashCommandBuilder()
     .setName("announce")
     .setDescription("Kirim pengumuman ke semua server Roblox")
@@ -150,7 +154,7 @@ const commands = [
 ].map((cmd) => cmd.toJSON());
 
 // ============================================================
-// REGISTER SLASH COMMANDS SAAT BOT READY
+// REGISTER COMMANDS SAAT BOT READY
 // ============================================================
 client.once("ready", async () => {
   console.log(`✅ Bot ${client.user.tag} siap!`);
@@ -208,6 +212,18 @@ client.on("interactionCreate", async (interaction) => {
       )
       .setTimestamp();
 
+    // Kirim juga ke channel player count
+    await sendEmbed(CONFIG.PLAYER_COUNT_CHANNEL_ID, {
+      title: "📊 Roblox Server Info",
+      color: 0x00bfff,
+      fields: [
+        { name: "🌐 Total Server Aktif", value: servers.length.toString(), inline: true },
+        { name: "👥 Total Players", value: totalPlayers.toString(), inline: true },
+        { name: "🖥️ Detail Server", value: serverList || "Tidak ada data" },
+      ],
+      timestamp: new Date().toISOString(),
+    });
+
     return interaction.editReply({ embeds: [embed] });
   }
 
@@ -215,9 +231,15 @@ client.on("interactionCreate", async (interaction) => {
   if (commandName === "players") {
     await interaction.deferReply();
 
-    // Minta update dari semua server via MessagingService
     await publishToAllServers("AdminGetInfo", {
       adminName: interaction.user.username,
+    });
+
+    await sendEmbed(CONFIG.PLAYER_COUNT_CHANNEL_ID, {
+      title: "📋 Player List Request",
+      color: 0x00ff88,
+      description: `Request dikirim oleh **${interaction.user.username}**\nUpdate player list akan muncul di channel ini.`,
+      timestamp: new Date().toISOString(),
     });
 
     return interaction.editReply({
@@ -225,7 +247,7 @@ client.on("interactionCreate", async (interaction) => {
         new EmbedBuilder()
           .setTitle("📋 Player List")
           .setDescription(
-            "✅ Request dikirim ke semua server!\nUpdate player list akan muncul di channel log Discord.\n\n_Gunakan `/serverinfo` untuk data server dari Roblox API._"
+            "✅ Request dikirim ke semua server!\nUpdate akan muncul di channel **player di map**."
           )
           .setColor(0x00ff88)
           .setTimestamp(),
@@ -253,24 +275,26 @@ client.on("interactionCreate", async (interaction) => {
       adminName: interaction.user.username,
     });
 
-    const embed = new EmbedBuilder()
-      .setTitle(success ? "👢 Kick Command Dikirim" : "❌ Gagal Mengirim Command")
-      .setColor(success ? 0xff6600 : 0xff0000)
-      .addFields(
+    const embedData = {
+      title: success ? "👢 Kick Command Dikirim" : "❌ Gagal Mengirim Command",
+      color: success ? 0xff6600 : 0xff0000,
+      fields: [
         { name: "Target", value: username, inline: true },
         { name: "Admin", value: interaction.user.username, inline: true },
         { name: "Alasan", value: reason, inline: false },
         {
           name: "Status",
-          value: success
-            ? "✅ Command berhasil dikirim ke semua server"
-            : "❌ Gagal — cek konfigurasi bot",
+          value: success ? "✅ Command berhasil dikirim ke semua server" : "❌ Gagal — cek konfigurasi bot",
           inline: false,
-        }
-      )
-      .setTimestamp();
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    };
 
-    return interaction.editReply({ embeds: [embed] });
+    // Log ke channel command admin
+    await sendEmbed(CONFIG.COMMAND_LOG_CHANNEL_ID, embedData);
+
+    return interaction.editReply({ embeds: [new EmbedBuilder(embedData)] });
   }
 
   // ── /ban ───────────────────────────────────────────────────
@@ -287,7 +311,6 @@ client.on("interactionCreate", async (interaction) => {
     const username = interaction.options.getString("username");
     const reason = interaction.options.getString("reason") || "Banned oleh Admin";
 
-    // Dapatkan User ID dari username
     const robloxUser = await getRobloxUserId(username);
     if (!robloxUser) {
       return interaction.editReply({
@@ -307,24 +330,25 @@ client.on("interactionCreate", async (interaction) => {
       adminName: interaction.user.username,
     });
 
-    const embed = new EmbedBuilder()
-      .setTitle(success ? "🔨 Ban Command Dikirim" : "❌ Gagal Mengirim Command")
-      .setColor(success ? 0xff0000 : 0x888888)
-      .addFields(
+    const embedData = {
+      title: success ? "🔨 Ban Command Dikirim" : "❌ Gagal Mengirim Command",
+      color: success ? 0xff0000 : 0x888888,
+      fields: [
         { name: "Target", value: `${robloxUser.name} (ID: ${robloxUser.id})`, inline: false },
         { name: "Admin", value: interaction.user.username, inline: true },
         { name: "Alasan", value: reason, inline: false },
         {
           name: "Status",
-          value: success
-            ? "✅ Command dikirim — ban tersimpan di DataStore"
-            : "❌ Gagal — cek konfigurasi bot",
+          value: success ? "✅ Command dikirim — ban tersimpan di DataStore" : "❌ Gagal — cek konfigurasi bot",
           inline: false,
-        }
-      )
-      .setTimestamp();
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    };
 
-    return interaction.editReply({ embeds: [embed] });
+    await sendEmbed(CONFIG.COMMAND_LOG_CHANNEL_ID, embedData);
+
+    return interaction.editReply({ embeds: [new EmbedBuilder(embedData)] });
   }
 
   // ── /unban ─────────────────────────────────────────────────
@@ -348,19 +372,18 @@ client.on("interactionCreate", async (interaction) => {
       adminName: interaction.user.username,
     });
 
-    return interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(success ? "✅ Unban Command Dikirim" : "❌ Gagal")
-          .setColor(success ? 0x00ff00 : 0xff0000)
-          .setDescription(
-            success
-              ? `Command unban untuk User ID **${userId}** telah dikirim ke semua server.`
-              : "Gagal mengirim command. Cek konfigurasi bot."
-          )
-          .setTimestamp(),
-      ],
-    });
+    const embedData = {
+      title: success ? "✅ Unban Command Dikirim" : "❌ Gagal",
+      color: success ? 0x00ff00 : 0xff0000,
+      description: success
+        ? `Command unban untuk User ID **${userId}** telah dikirim ke semua server.\nDikirim oleh: **${interaction.user.username}**`
+        : "Gagal mengirim command. Cek konfigurasi bot.",
+      timestamp: new Date().toISOString(),
+    };
+
+    await sendEmbed(CONFIG.COMMAND_LOG_CHANNEL_ID, embedData);
+
+    return interaction.editReply({ embeds: [new EmbedBuilder(embedData)] });
   }
 
   // ── /announce ──────────────────────────────────────────────
@@ -381,25 +404,24 @@ client.on("interactionCreate", async (interaction) => {
       adminName: interaction.user.username,
     });
 
-    return interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(success ? "📢 Announcement Terkirim!" : "❌ Gagal Mengirim")
-          .setColor(success ? 0x9b59b6 : 0xff0000)
-          .addFields(
-            { name: "Pesan", value: message, inline: false },
-            { name: "Dikirim Oleh", value: interaction.user.username, inline: true },
-            {
-              name: "Status",
-              value: success
-                ? "✅ Announcement tampil di semua server aktif"
-                : "❌ Gagal — cek konfigurasi bot",
-              inline: true,
-            }
-          )
-          .setTimestamp(),
+    const embedData = {
+      title: success ? "📢 Announcement Terkirim!" : "❌ Gagal Mengirim",
+      color: success ? 0x9b59b6 : 0xff0000,
+      fields: [
+        { name: "Pesan", value: message, inline: false },
+        { name: "Dikirim Oleh", value: interaction.user.username, inline: true },
+        {
+          name: "Status",
+          value: success ? "✅ Tampil di semua server aktif" : "❌ Gagal — cek konfigurasi bot",
+          inline: true,
+        },
       ],
-    });
+      timestamp: new Date().toISOString(),
+    };
+
+    await sendEmbed(CONFIG.COMMAND_LOG_CHANNEL_ID, embedData);
+
+    return interaction.editReply({ embeds: [new EmbedBuilder(embedData)] });
   }
 });
 
