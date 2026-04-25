@@ -7,7 +7,7 @@ const axios = require("axios");
 // ============================================================
 const CONFIG = {
   TOKEN: process.env.DISCORD_TOKEN,
-  BOT_SECRET: process.env.BOT_SECRET || "KAWARACLUB123*",
+  BOT_SECRET: process.env.BOT_SECRET || "SURABAYA123*",
   UNIVERSE_ID: process.env.UNIVERSE_ID,
   ROBLOX_COOKIE: process.env.ROBLOX_COOKIE,
   ADMIN_ROLE_ID: process.env.ADMIN_ROLE_ID,
